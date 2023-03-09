@@ -4,5 +4,5 @@ group project 2 for group 5 (DAS 2023 Spring, School of Mathemetics &amp; Statis
 Group Members:\\
 Jiawei Liu(2825781L)----SAMSUNG- USERS\\
 Jiahao Wei(2749287W)----backpl\\
-Wenyan Zhou(2770117Z)----wyzhou23
+Wenyan Zhou(2770117Z)----wyzhou23\\
 Heying Zhang(2721676Z)----jshg123548(Heying Z)
