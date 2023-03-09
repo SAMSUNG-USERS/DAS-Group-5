@@ -5,3 +5,4 @@ Group Members:\\
 Jiawei Liu(2825781L)----SAMSUNG- USERS\\
 Jiahao Wei(2749287W)----backpl\\
 Wenyan Zhou(2770117Z)----wyzhou23
+Heying Zhang(2721676Z)----jshg123548(Heying Z)
