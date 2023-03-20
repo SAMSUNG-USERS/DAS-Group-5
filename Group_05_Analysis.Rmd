@@ -17,7 +17,6 @@ library(qcc)
 library(jtools)
 library(gridExtra)
 library(epiDisplay)
-setwd("C:/Users/Lenovo/Desktop/GLM")
 household<-read.csv("dataset5.csv")
 ```
 
@@ -268,16 +267,17 @@ model5<-glm(Total.Number.of.Family.members
            family = poisson, data = household)
 summary(model5)
 ```
-
+## Comparison on 8 Different Models
 ```{r}
-c(model0$deviance, model0$aic)
-c(model00$deviance, model00$aic)
-c(model1$deviance, model1$aic)
-c(model2$deviance, model2$aic)
-c(model3$deviance, model3$aic)
-c(model3.nb$deviance, model3.nb$aic)
-c(model4$deviance, model4$aic)
-c(model5$deviance, model5$aic)
+library(knitr)
+Accuracy<-data.frame(model=c('model0','model00','model1','model2','model3','model3.nb','model4','model5'),                                                                               deviance=c(model0$deviance,model00$deviance,model1$deviance,model2$deviance,
+                          model3$deviance,model3.nb$deviance,model4$deviance,model5$deviance),         
+                    AIC=c(model0$aic, model00$aic, model1$aic, model2$aic, model3$aic, model3.nb$aic,model4$aic, model5$aic))
+Accuracy<-t(Accuracy)
+kable(Accuracy,
+      caption = ' Accuracy of 8 Models',
+      fontsize = 4,
+      align = "c")
 ```
 
 # Goodness of Fit Test and Prediction
