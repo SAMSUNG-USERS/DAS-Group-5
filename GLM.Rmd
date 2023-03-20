@@ -1,0 +1,295 @@
+---
+title: "GLM"
+output: pdf_document
+date: "2023-03-11"
+---
+
+```{r setup, include=FALSE,echo=FALSE}
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(readr)
+library(tidyverse)
+library(gridExtra)
+library(MASS)
+library(pscl)
+library(qcc)
+library(jtools)
+library(gridExtra)
+library(epiDisplay)
+setwd("C:/Users/Lenovo/Desktop/GLM")
+household<-read.csv("dataset5.csv")
+```
+
+# Descriptive Statistics and Visualisation
+
+Firstly we would like to have a look at the data set which shows information of family income and expenditure in Philippines (Region:IX - Zasmboanga Peninsula). 
+
+```{r}
+str(household)
+```
+
+## Exploration on Response variable
+
+```{r response}
+hist(household$Total.Number.of.Family.members,breaks = 15,xlab = "family member count",
+     main="Distribution of Y")
+```
+
+The histgram of response variable total member in each family shows that it is counting variable and seems to follow possion distribution. So Possion regression model is proper for this study.
+
+## Outlier handling
+
+Boxplots of two explaintry Variable total income and food expendature per year show that outliers exist and may have high leverage effect which can dramitically reduce the accuracy of fitted model.
+
+```{r echo=FALSE,warning=FALSE}
+p1<-ggplot(data = household, aes(x = as.factor(Total.Number.of.Family.members), 
+                                 y = Total.Household.Income, fill = Total.Number.of.Family.members)) +
+  geom_boxplot() +
+  labs(x = "Total.Number.of.Family.members", y = "Total.Household.Income") + 
+  theme(legend.position = "none") 
+p2<-ggplot(data = household, aes(x = as.factor(Total.Number.of.Family.members), 
+                                 y = Total.Food.Expenditure, fill = Total.Number.of.Family.members)) +
+  geom_boxplot() +
+  labs(x = "Total.Number.of.Family.members", y = "Total.Food.Expenditure") + 
+  theme(legend.position = "none") 
+grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r outlier}
+z_scores.income <- scale(household$Total.Household.Income)
+household <- household[z_scores.income < 3 & z_scores.income > -3,]
+z_scores.food <- scale(household$Total.Food.Expenditure)
+household <- household[z_scores.food < 3 & z_scores.food > -3,]
+str(household)
+```
+
+```{r echo=FALSE,warning=FALSE}
+p1<-ggplot(data = household, aes(x = as.factor(Total.Number.of.Family.members), 
+                                 y = Total.Household.Income, fill = Total.Number.of.Family.members)) +
+  geom_boxplot() +
+  labs(x = "Total.Number.of.Family.members", y = "Total.Household.Income") + 
+  theme(legend.position = "none") 
+p2<-ggplot(data = household, aes(x = as.factor(Total.Number.of.Family.members), 
+                                 y = Total.Food.Expenditure, fill = Total.Number.of.Family.members)) +
+  geom_boxplot() +
+  labs(x = "Total.Number.of.Family.members", y = "Total.Food.Expenditure") + 
+  theme(legend.position = "none") 
+grid.arrange(p1, p2, ncol = 2)
+```
+
+After removing 49 outliers the boxplots show that the quality of data has been dramatically improved.
+
+## pairwised plot
+
+First, let's look at the relationship between the variables.
+
+```{r}
+household$Household.Head.Sex<-as.factor(household$Household.Head.Sex)
+household$Type.of.Household<-as.factor(household$Type.of.Household)
+household$Electricity<-as.factor(household$Electricity)
+ggpairs(household[,-2],
+        upper=list(continuous=wrap("points", alpha=0.4, color="#d73027")), 
+        lower="blank", axisLabels="none")+
+  theme(strip.text = element_text(size = rel(0.5)))
+
+```
+We can see that there is a relationship between total annual income and food expenditure, so by converting the data logarithmically, this relationship becomes linear and more pronounced. Therefore, the corresponding treatment of these two variables will be considered in subsequent analyses.
+
+```{r}
+data<-data.frame(household[,c(1,3,7)])
+lndata<-data.frame(log(data$Total.Household.Income),
+                   log(data$Total.Food.Expenditure),
+                   data$Total.Number.of.Family.members)
+ggpairs(data,
+        upper=list(continuous=wrap("points", alpha=0.4, color="#d73027")), 
+        lower="blank", axisLabels="none")
+ggpairs(lndata,
+        upper=list(continuous=wrap("points", alpha=0.4, color="#d73027")), 
+        lower="blank", axisLabels="none")
+```
+
+Now let's look at the distribution of total household members by three categorical variables.
+
+```{r}
+ggplot(household, aes(x = Total.Number.of.Family.members, y = ..count.., 
+                      group = Household.Head.Sex, fill = Household.Head.Sex)) + 
+  geom_bar(position = "dodge", stat = "count") +
+  labs(x = "Total Number of Family Members", y = "Count") +
+  ggtitle("Total Number of Family Members by Household Head Sex") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+ggplot(household, aes(x = Total.Number.of.Family.members, y = ..count.., 
+                      group = Type.of.Household, fill = Type.of.Household)) + 
+  geom_bar(position = "dodge", stat = "count") +
+  labs(title = "Total Number of Family Members by Type of Household",
+       y = "Count")
+```
+```{r}
+ggplot(household, aes(x = Total.Number.of.Family.members, y = ..count.., 
+                      group = Electricity, fill = Electricity)) + 
+  geom_bar(position = "dodge", stat = "count") +
+  labs(x = "Total Number of Family Members", y = "Count") +
+  ggtitle("Total Number of Family Members by Electricity") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+We can see that the difference in the distribution of the number of family members is more pronounced under the first two categorical variables than under the third variable, which we will explore in subsequent analyses.
+
+# GLM Model Fitting
+
+First, we perform Poisson regression on the cleaned data and check the regression effect.
+
+```{r GLM}
+model0<-glm(Total.Number.of.Family.members 
+           ~ Total.Household.Income
+           + Total.Food.Expenditure
+           + Household.Head.Age 
+           + House.Floor.Area 
+           + House.Age 
+           + Number.of.bedrooms 
+           + Household.Head.Sex  
+           + Type.of.Household
+           + Electricity, 
+           family = poisson, data = household)
+summary(model0)
+```
+
+We then logize the total annual household income and the total food expenditure.
+
+```{r GLM00}
+model00<-glm(Total.Number.of.Family.members 
+           ~ log(Total.Household.Income)
+           + log(Total.Food.Expenditure)
+           + Household.Head.Age 
+           + House.Floor.Area 
+           + House.Age 
+           + Number.of.bedrooms 
+           + Household.Head.Sex  
+           + Type.of.Household
+           + Electricity, 
+           family = poisson, data = household)
+summary(model00)
+```
+
+Now exclude the non-significant explanatory variables: house floor area, number of bedrooms and electricity.
+
+```{r GLM_1}
+model1<-glm(Total.Number.of.Family.members 
+           ~ log(Total.Household.Income)
+           + log(Total.Food.Expenditure)
+           + Household.Head.Age 
+           + House.Age 
+           + Number.of.bedrooms 
+           + Household.Head.Sex  
+           + Type.of.Household
+           + Electricity, 
+           family = poisson, data = household)
+summary(model1)
+```
+
+```{r GLM_2}
+model2<-glm(Total.Number.of.Family.members 
+           ~ log(Total.Household.Income)
+           + log(Total.Food.Expenditure)
+           + Household.Head.Age 
+           + House.Age 
+           + Household.Head.Sex  
+           + Type.of.Household
+           + Electricity, 
+           family = poisson, data = household)
+summary(model2)
+```
+
+```{r GLM_3}
+model3<-glm(Total.Number.of.Family.members 
+           ~ log(Total.Household.Income)
+           + log(Total.Food.Expenditure)
+           + Household.Head.Age 
+           + House.Age 
+           + Household.Head.Sex  
+           + Type.of.Household, 
+           family = poisson, data = household)
+summary(model3)
+```
+
+Now we perform tests for the effect of overdispersion.
+
+```{r qcc}
+qcc.overdispersion.test(household$Total.Number.of.Family.members, type="poisson")
+ggplot(model3, aes(x=fitted(model3),
+                   y=(household$Total.Number.of.Family.members-fitted(model3))^2))+
+  geom_point(col="#f46d43") +
+  geom_abline(slope=1, intercept=0, col="#a6d96a", linewidth=1) +
+  ylab(expression((y-hat(mu))^2)) + xlab(expression(hat(mu)))
+```
+
+Neither hypothesis testing nor image can account for the significant presence of overdispersion, so we still apply a negative binomial distribution model (to rule out overdispersion) and observe its results to be extra safe.
+
+```{r GLM_3nb}
+model3.nb<-glm.nb(Total.Number.of.Family.members 
+           ~ log(Total.Household.Income)
+           + log(Total.Food.Expenditure)
+           + Household.Head.Age 
+           + House.Age 
+           + Household.Head.Sex  
+           + Type.of.Household,
+           data = household)
+summary(model3.nb)
+```
+
+Obviously, the negative binomial regression model is not better, so we return to the Poisson model.
+Based on the previous intuitive analysis, we now explore the interaction based on the existing model.
+
+```{r GLM_4}
+model4<-glm(Total.Number.of.Family.members 
+           ~ log(Total.Household.Income)
+           * log(Total.Food.Expenditure)
+           + Household.Head.Age 
+           + House.Age 
+           + Household.Head.Sex  
+           + Type.of.Household, 
+           family = poisson, data = household)
+summary(model4)
+```
+
+By excluding the non-significant independent variables under the new model, we get the final model5.
+
+```{r GLM_5}
+model5<-glm(Total.Number.of.Family.members 
+           ~ log(Total.Household.Income)
+           * log(Total.Food.Expenditure) 
+           + House.Age 
+           + Household.Head.Sex  
+           + Type.of.Household, 
+           family = poisson, data = household)
+summary(model5)
+```
+
+```{r}
+c(model0$deviance, model0$aic)
+c(model00$deviance, model00$aic)
+c(model1$deviance, model1$aic)
+c(model2$deviance, model2$aic)
+c(model3$deviance, model3$aic)
+c(model3.nb$deviance, model3.nb$aic)
+c(model4$deviance, model4$aic)
+c(model5$deviance, model5$aic)
+```
+
+# Goodness of Fit Test and Prediction
+
+```{r}
+model<-model5
+poisgof(model)#"Goodness-of-fit test for Poisson assumption"
+
+exp(coef(model))
+```
+
+```{r}
+pred<-predict(model, household)
+plot(household$Total.Number.of.Family.members,exp(pred))
+abline(a=0,b=1)
+```
