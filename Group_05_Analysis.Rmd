@@ -36,7 +36,7 @@ hist(household$Total.Number.of.Family.members,breaks = 15,xlab = "family member 
      main="Distribution of Y")
 ```
 
-The histgram of response variable total member in each family shows that it is counting variable and seems to follow possion distribution. So Possion regression model is proper for this study.
+The histgram of response variable total member in each family shows that it is counting variable and seems to follow possion distribution. Also for the relationship between response variable and each explanatory variable are not linear relationships. So Possion regression model is proper for this study.
 
 ## Outlier handling
 
@@ -55,6 +55,7 @@ p2<-ggplot(data = household, aes(x = as.factor(Total.Number.of.Family.members),
   theme(legend.position = "none") 
 grid.arrange(p1, p2, ncol = 2)
 ```
+We use the Z-score function to transform the data into a standard normal distribution and then determine and remove outliers based on a threshold value
 
 ```{r outlier}
 z_scores.income <- scale(household$Total.Household.Income)
