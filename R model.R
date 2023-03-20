@@ -126,7 +126,7 @@ idr.display(model)
 # What else needs to be added
 
 
-#some added plots
+#some added plots  #These plots below may have been given in previous programs
 
 ggplot(dataset, aes(x = Total.Number.of.Family.members, y = ..prop.., group = Household.Head.Sex, fill = Household.Head.Sex)) + 
   geom_bar(position = "dodge", stat = "count") +
