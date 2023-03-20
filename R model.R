@@ -121,10 +121,6 @@ exp(coef(model1))
 
 idr.display(model)
 
-# What other visualization functions are needed ?
-# Predicted value?
-# What else needs to be added
-
 
 #some added plots  #These plots below may have been given in previous programs
 
