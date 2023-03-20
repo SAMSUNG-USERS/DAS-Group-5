@@ -288,8 +288,4 @@ poisgof(model)#"Goodness-of-fit test for Poisson assumption"
 exp(coef(model))
 ```
 
-```{r}
-pred<-predict(model, household)
-plot(household$Total.Number.of.Family.members,exp(pred))
-abline(a=0,b=1)
-```
+
