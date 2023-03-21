@@ -17,6 +17,7 @@ library(qcc)
 library(jtools)
 library(gridExtra)
 library(epiDisplay)
+library(sjPlot)
 household<-read.csv("dataset5.csv")
 ```
 
@@ -277,9 +278,15 @@ plot_model(model5,show.values=TRUE, show.p=FALSE, title = "",value.offset = 0.25
 
 ```{r}
 library(knitr)
-Accuracy<-data.frame(model=c('model0','model00','model1','model2','model3','model3.nb','model4','model5'),                                                                               deviance=c(model0$deviance,model00$deviance,model1$deviance,model2$deviance,
-                          model3$deviance,model3.nb$deviance,model4$deviance,model5$deviance),         
-                    AIC=c(model0$aic, model00$aic, model1$aic, model2$aic, model3$aic, model3.nb$aic,model4$aic, model5$aic))
+Accuracy<-data.frame(
+                     model=c('model0','model00','model1','model2',
+                             'model3','model3.nb','model4','model5'), 
+                     deviance=c(model0$deviance,model00$deviance,model1$deviance, 
+                                model2$deviance,model3$deviance,model3.nb$deviance,
+                                model4$deviance,model5$deviance),
+                     AIC=c(model0$aic, model00$aic, model1$aic, model2$aic,
+                           model3$aic, model3.nb$aic,model4$aic, model5$aic)
+                     )
 Accuracy<-t(Accuracy)
 kable(Accuracy,
       caption = ' Accuracy of 8 Models',
