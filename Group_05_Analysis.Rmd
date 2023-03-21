@@ -267,6 +267,12 @@ model5<-glm(Total.Number.of.Family.members
            family = poisson, data = household)
 summary(model5)
 ```
+
+```{r}
+exp(coef(model5))
+plot_model(model5,show.values=TRUE, show.p=FALSE, title = "",value.offset = 0.25)
+```
+
 ## Comparison on 8 Different Models
 
 ```{r}
@@ -280,14 +286,3 @@ kable(Accuracy,
       fontsize = 4,
       align = "c")
 ```
-
-# Goodness of Fit Test and Prediction
-
-```{r}
-model<-model5
-poisgof(model)#"Goodness-of-fit test for Poisson assumption"
-
-exp(coef(model))
-```
-
-
